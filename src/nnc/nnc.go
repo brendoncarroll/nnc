@@ -52,6 +52,17 @@ type MountSpec struct {
 	Src MountSrc `json:"src"`
 }
 
+func (ms MountSpec) IsSystem() bool {
+	switch {
+	case ms.Src.ProcFS != nil:
+		return true
+	case ms.Src.SysFS != nil:
+		return true
+	default:
+		return false
+	}
+}
+
 type NetworkSpec struct {
 	Host *string
 }
@@ -89,7 +100,7 @@ func PostBin(x []byte) (blobcache.CID, error) {
 	if err != nil && !os.IsNotExist(err) {
 		return blobcache.CID{}, err
 	} else if os.IsNotExist(err) {
-		if err := os.WriteFile(p, x, 0o555); err != nil {
+		if err := os.WriteFile(p, x, 0o777); err != nil {
 			return blobcache.CID{}, err
 		}
 	}

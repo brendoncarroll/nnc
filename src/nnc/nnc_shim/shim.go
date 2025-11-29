@@ -20,6 +20,9 @@ func main() {
 		log.Fatalf("nnc_shim: 2 args required")
 	}
 	if err := run(os.Args[1:]); err != nil {
+		if err := printDir("/"); err != nil {
+			panic(err)
+		}
 		log.Fatalf("nnc_shim: %s", err)
 	}
 }
@@ -29,11 +32,16 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
+	// Create new tmpfs root
+	newRoot, err := os.MkdirTemp("", "newroot")
+	if err != nil {
+		return err
+	}
 	mainBin, err := nnc.LoadBin(spec.Main)
 	if err != nil {
 		return fmt.Errorf("loading bin: %w", err)
 	}
-	if err := prepareMounts(spec.Mounts); err != nil {
+	if err := prepareMounts(newRoot, spec.Mounts); err != nil {
 		return err
 	}
 
@@ -41,27 +49,29 @@ func run(args []string) error {
 	if err := os.WriteFile(mainPath, mainBin, 0o777); err != nil {
 		return err
 	}
+
 	if err := syscall.Exec(mainPath, spec.Args, spec.Env); err != nil {
 		return fmt.Errorf("syscall.Exec: %w", err)
 	}
 	return nil
 }
 
-func prepareMounts(mounts []nnc.MountSpec) error {
+func prepareMounts(newRoot string, mounts []nnc.MountSpec) error {
 	// First, ensure we're in a new mount namespace
 	if err := syscall.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, ""); err != nil {
 		return fmt.Errorf("failed to make mount namespace private: %w", err)
 	}
-	// Create new tmpfs root
-	newRoot, err := os.MkdirTemp("", "newroot")
-	if err != nil {
-		return err
-	}
-	if err := os.MkdirAll(newRoot, 0755); err != nil {
-		log.Fatalf("mkdir new root: %v", err)
-	}
 	if err := syscall.Mount("tmpfs", newRoot, "tmpfs", 0, ""); err != nil {
 		log.Fatalf("mount tmpfs: %v", err)
+	}
+
+	// Handle all non-system mounts specified in the container spec
+	for _, mount := range mounts {
+		if !mount.IsSystem() {
+			if err := handleMount("/", newRoot, mount); err != nil {
+				return fmt.Errorf("failed to handle mount %s: %w", mount.Dst, err)
+			}
+		}
 	}
 	// Make old root a mount point
 	putOld := newRoot + "/oldroot"
@@ -76,10 +86,11 @@ func prepareMounts(mounts []nnc.MountSpec) error {
 		log.Fatalf("chdir /: %v", err)
 	}
 
-	// Handle all mounts specified in the container spec
 	for _, mount := range mounts {
-		if err := handleMount("/oldroot", "/", mount); err != nil {
-			return fmt.Errorf("failed to handle mount %s: %w", mount.Dst, err)
+		if mount.IsSystem() {
+			if err := handleMount("/oldroot", "/", mount); err != nil {
+				return fmt.Errorf("failed to handle mount %s: %w", mount.Dst, err)
+			}
 		}
 	}
 
@@ -97,11 +108,11 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 	if err := mount.Src.Validate(); err != nil {
 		return err
 	}
+	dst := filepath.Join(newRoot, mount.Dst)
 	// Create mount point if it doesn't exist
-	if err := os.MkdirAll(mount.Dst, 0755); err != nil {
+	if err := os.MkdirAll(dst, 0o755); err != nil {
 		return fmt.Errorf("failed to create mount point: %w", err)
 	}
-	dst := filepath.Join(newRoot, mount.Dst)
 	switch {
 	case mount.Src.TmpFS != nil:
 		return syscall.Mount("", dst, "tmpfs", 0, "")
@@ -110,10 +121,15 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 	case mount.Src.SysFS != nil:
 		return syscall.Mount("", mount.Dst, "sysfs", 0, "")
 	case mount.Src.HostRO != nil:
+		// log.Println("mounting", dst, "-ro->", filepath.Join(oldRoot, *mount.Src.HostRO))
 		src := filepath.Join(oldRoot, *mount.Src.HostRO)
-		return syscall.Mount(src, dst, "", syscall.MS_BIND|syscall.MS_RDONLY, "")
+		if err := syscall.Mount(src, dst, "", syscall.MS_BIND|syscall.MS_RDONLY, ""); err != nil {
+			return err
+		}
+		return syscall.Mount("", dst, "", syscall.MS_BIND|syscall.MS_REMOUNT|syscall.MS_RDONLY, "")
 	case mount.Src.HostRW != nil:
-		src := filepath.Join(oldRoot, *mount.Src.HostRO)
+		// log.Println("mounting", dst, "->", filepath.Join(oldRoot, *mount.Src.HostRW))
+		src := filepath.Join(oldRoot, *mount.Src.HostRW)
 		return syscall.Mount(src, dst, "", syscall.MS_BIND, "")
 	default:
 		panic(mount) // Validate should have caught this
@@ -126,4 +142,19 @@ func parseSpec(x string) (*nnc.ContainerSpec, error) {
 		return nil, err
 	}
 	return &spec, nil
+}
+
+func printDir(x string) error {
+	ents, err := os.ReadDir(x)
+	if err != nil {
+		return err
+	}
+	for _, ent := range ents {
+		info, err := ent.Info()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%v %v %v\n", ent.Name(), info.Mode(), info.Size())
+	}
+	return nil
 }

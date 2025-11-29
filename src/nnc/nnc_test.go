@@ -34,7 +34,10 @@ func TestRun(t *testing.T) {
 			},
 			{
 				Dst: "/data1",
-				Src: MountSrc{HostRO: &scratchDir},
+				// Since scratchDir is on tmpfs, this must be RW
+				// Apparently the kernel can't possibly make a tmpfs read-only
+				// because $REASONS
+				Src: MountSrc{HostRW: &scratchDir},
 			},
 			{
 				Dst: "/proc",
