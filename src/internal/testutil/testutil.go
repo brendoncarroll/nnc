@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"io/fs"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -53,6 +54,10 @@ func MakeProcessSummary() ProcSummary {
 	if err != nil {
 		panic(err)
 	}
+	nifs, err := net.Interfaces()
+	if err != nil {
+		panic(err)
+	}
 	// TODO: load files
 	return ProcSummary{
 		PID:  os.Getpid(),
@@ -61,7 +66,8 @@ func MakeProcessSummary() ProcSummary {
 		UID:  os.Getuid(),
 		GID:  os.Getgid(),
 
-		Files: files,
+		Files:  files,
+		NetIfs: nifs,
 	}
 }
 
@@ -79,7 +85,8 @@ type ProcSummary struct {
 	UID int
 	GID int
 
-	Files []FileSummary
+	Files  []FileSummary
+	NetIfs []net.Interface
 }
 
 func MakeFileSummaries(fsys fs.FS, p string) (ret []FileSummary, _ error) {
