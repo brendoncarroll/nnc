@@ -3,6 +3,8 @@
 package nnc
 
 import (
+	"bytes"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
@@ -23,6 +25,13 @@ func TestRun(t *testing.T) {
 	testBinCID := postExec(t, testBin)
 	require.NoError(t, os.WriteFile(filepath.Join(scratchDir, "testbin"), testBin, 0755))
 
+	pr, pw, err := os.Pipe()
+	require.NoError(t, err)
+	buf := &bytes.Buffer{}
+	go func() {
+		_, err := io.Copy(buf, pr)
+		require.NoError(t, err)
+	}()
 	ec, err := Run(ctx, shimBinCID, ContainerSpec{
 		Main: testBinCID,
 		Mounts: []MountSpec{
@@ -52,9 +61,15 @@ func TestRun(t *testing.T) {
 				},
 			},
 		},
-	})
+	}, RunSetFiles(
+		os.Stdin,
+		pw,
+		os.Stderr,
+	))
 	require.NoError(t, err)
 	require.Equal(t, 0, ec)
+	_, err = testutil.ParseProcessSummary(buf.Bytes())
+	require.NoError(t, err)
 }
 
 func setup(t testing.TB) []byte {

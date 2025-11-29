@@ -77,7 +77,9 @@ var runCmd = star.Command{
 			return err
 		}
 		ctx := c.Context
-		ec, err := nnc.Run(ctx, shimCID, *cspec)
+		ec, err := nnc.Run(ctx, shimCID, *cspec,
+			nnc.RunSetFiles(os.Stdin, os.Stdout, os.Stderr),
+		)
 		if err != nil {
 			return err
 		}
