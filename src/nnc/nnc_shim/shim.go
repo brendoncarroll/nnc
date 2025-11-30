@@ -50,6 +50,11 @@ func run(args []string) error {
 		return err
 	}
 
+	if spec.WorkingDir != "" {
+		if err := os.Chdir(spec.WorkingDir); err != nil {
+			return err
+		}
+	}
 	if err := syscall.Exec(mainPath, spec.Args, spec.Env); err != nil {
 		return fmt.Errorf("syscall.Exec: %w", err)
 	}

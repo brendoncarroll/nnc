@@ -75,12 +75,17 @@ type ContainerSpec struct {
 	Args []string `json:"args"`
 	// Env will be used as the environment
 	Env []string `json:"env"`
+	// WorkingDir, if not zero, will set the working directory of the main process.
+	WorkingDir string `json:"wd"`
 
 	Mounts  []MountSpec   `json:"mounts"`
 	Network []NetworkSpec `json:"network"`
 }
 
 func (s *ContainerSpec) Validate() error {
+	if s.Main.IsZero() {
+		return fmt.Errorf("main CID cannot be zero")
+	}
 	for _, m := range s.Mounts {
 		if err := m.Src.Validate(); err != nil {
 			return err

@@ -4,8 +4,10 @@ go 1.25.4
 
 require (
 	blobcache.io/blobcache v0.0.1
+	github.com/google/go-jsonnet v0.21.0
 	github.com/stretchr/testify v1.10.0
 	go.brendoncarroll.net/star v0.0.0-20251101181839-d7285e010b23
+	lukechampine.com/blake3 v1.2.1
 )
 
 require (
@@ -28,5 +30,5 @@ require (
 	golang.org/x/sync v0.14.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	lukechampine.com/blake3 v1.2.1 // indirect
+	sigs.k8s.io/yaml v1.4.0 // indirect
 )

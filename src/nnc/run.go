@@ -26,6 +26,10 @@ func RunSetFiles(fs ...*os.File) RunOption {
 
 // Run runs a container given a path to the nnc_main binary and a spec for the container.
 func Run(ctx context.Context, shimCID blobcache.CID, spec ContainerSpec, opts ...RunOption) (int, error) {
+	if err := spec.Validate(); err != nil {
+		return 0, err
+	}
+
 	var stng runSettings
 	for _, opt := range opts {
 		opt(&stng)

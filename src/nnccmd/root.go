@@ -26,7 +26,48 @@ var enterCmd = star.Command{
 	Metadata: star.Metadata{
 		Short: "enter a new container with access to the current directory",
 	},
+	Pos: []star.Positional{mainParam, argsParam},
+	Flags: map[string]star.Flag{
+		"dr":     droParam,
+		"dw":     drwParam,
+		"env":    envParam,
+		"preset": presetsParam,
+	},
 	F: func(c star.Context) error {
+		shellPath := os.Getenv("SHELL")
+		if shellPath == "" {
+			return fmt.Errorf("SHELL must be set to use enter")
+		}
+		shellBin, err := os.ReadFile(shellPath)
+		if err != nil {
+			return err
+		}
+		mainCID, err := nnc.PostBin(shellBin)
+		if err != nil {
+			return err
+		}
+		initSpec := nnc.ContainerSpec{
+			Main: mainCID,
+		}
+		cspec, err := configure(initSpec, c)
+		if err != nil {
+			return err
+		}
+		shimCID, err := nnc.PostBin(shimBin)
+
+		if err != nil {
+			return err
+		}
+		ctx := c.Context
+		ec, err := nnc.Run(ctx, shimCID, *cspec,
+			nnc.RunSetFiles(os.Stdin, os.Stdout, os.Stderr),
+		)
+		if err != nil {
+			return err
+		}
+		if ec != 0 {
+			os.Exit(ec)
+		}
 		return nil
 	},
 }
@@ -36,14 +77,15 @@ var printSpecCmd = star.Command{
 		Short: "like run, but prints the container spec instead of running it",
 	},
 
-	Pos: []star.Positional{mainParam},
+	Pos: []star.Positional{mainParam, argsParam},
 	Flags: map[string]star.Flag{
-		"dr":  droParam,
-		"dw":  drwParam,
-		"env": envParam,
+		"dr":     droParam,
+		"dw":     drwParam,
+		"env":    envParam,
+		"preset": presetsParam,
 	},
 	F: func(c star.Context) error {
-		cspec, err := specFromContext(c)
+		cspec, err := configure(nnc.ContainerSpec{}, c)
 		if err != nil {
 			return err
 		}
@@ -60,15 +102,16 @@ var runCmd = star.Command{
 	Metadata: star.Metadata{
 		Short: "run a container",
 	},
-	Pos: []star.Positional{mainParam},
+	Pos: []star.Positional{mainParam, argsParam},
 	Flags: map[string]star.Flag{
-		"dr":  droParam,
-		"dw":  drwParam,
-		"env": envParam,
-		"ldd": lddParam,
+		"dr":     droParam,
+		"dw":     drwParam,
+		"env":    envParam,
+		"ldd":    lddParam,
+		"preset": presetsParam,
 	},
 	F: func(c star.Context) error {
-		cspec, err := specFromContext(c)
+		cspec, err := configure(nnc.ContainerSpec{}, c)
 		if err != nil {
 			return err
 		}
@@ -110,8 +153,9 @@ func addSysMounts(m []nnc.MountSpec) []nnc.MountSpec {
 	return m
 }
 
-func specFromContext(c star.Context) (*nnc.ContainerSpec, error) {
-	var cspec nnc.ContainerSpec
+// configure configures cspec, using parameters from c
+// and returns a copy of cspec with the configuration applied.
+func configure(cspec nnc.ContainerSpec, c star.Context) (*nnc.ContainerSpec, error) {
 	dros := droParam.Load(c)
 	drws := drwParam.Load(c)
 	cspec.Mounts = addSysMounts(cspec.Mounts)
@@ -121,20 +165,29 @@ func specFromContext(c star.Context) (*nnc.ContainerSpec, error) {
 	envs := envParam.Load(c)
 	cspec.Env = append(cspec.Env, envs...)
 
-	mainBin := mainParam.Load(c)
-	mainCID, err := nnc.PostBin(mainBin)
+	if mainBin, ok := mainParam.LoadOpt(c); ok {
+		mainCID, err := nnc.PostBin(mainBin)
+		if err != nil {
+			return nil, err
+		}
+		cspec.Main = mainCID
+	}
+
+	args := argsParam.Load(c)
+	cspec.Args = args
+
+	// apply all presets last
+	presets := presetsParam.Load(c)
+	cspec2, err := nnc.ApplyPresets(cspec, presets...)
 	if err != nil {
 		return nil, err
 	}
-	cspec.Main = mainCID
+	cspec = *cspec2
 
-	if err := cspec.Validate(); err != nil {
-		return nil, err
-	}
 	return &cspec, nil
 }
 
-var mainParam = star.Required[[]byte]{
+var mainParam = star.Optional[[]byte]{
 	ID:       "main",
 	Parse:    os.ReadFile,
 	ShortDoc: "the filepath to the program to run in the container",
@@ -162,6 +215,43 @@ var lddParam = star.Repeated[string]{
 	ID:       "ldd",
 	Parse:    star.ParseString,
 	ShortDoc: "include all transitively reachable shared objects",
+}
+
+var presetsParam = star.Repeated[nnc.Preset]{
+	ID: "preset",
+	Parse: func(x string) (nnc.Preset, error) {
+		srcs, err := getSources()
+		if err != nil {
+			return nil, err
+		}
+		return nnc.NewJsonnetPreset(srcs, x)
+	},
+	ShortDoc: "specify a preset",
+}
+
+var argsParam = star.Repeated[string]{
+	ID:       "args",
+	Parse:    star.ParseString,
+	ShortDoc: "args will be passed on to the container process",
+}
+
+func getSources() ([]nnc.Source, error) {
+	wdPath, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	wdRoot, err := os.OpenRoot(wdPath)
+	if err != nil {
+		return nil, err
+	}
+	presetDir, err := nnc.OpenPresetDir()
+	if err != nil {
+		return nil, err
+	}
+	return []nnc.Source{
+		{Prefix: "./", Root: wdRoot},
+		{Prefix: "", Root: presetDir},
+	}, nil
 }
 
 func parseMountSpec(rw bool) func(x string) (nnc.MountSpec, error) {
