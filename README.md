@@ -13,6 +13,21 @@ If they forget to or don't know how to provide the subprocess
 with the needed resources, then the application will not work as intended.
 That will lead them to understand which resources are necessary so they can pass them through.
 
+
+## Presets
+nnc configuration is focused around command line flags.
+This means that people who don't want to learn anything new can
+still use all nnc features, by scripting in their shell as they would normally.
+For example, look at the `etc/fish.sh` file included in this repository.
+
+nnc also offers a more powerful way to configure a container using presets.
+A preset is a function `(spec: ContainerSpec, caller: CallerContext) -> ContainerSpec
+Presets are defined using Jsonnet, and can be layered on top of one another.
+Presets are applied in the order that they are passed to the CLI.
+
+Presets must be defined in `.jsonnet` files, and the extension is omitted when referring to them on the command line.
+However, when imported in a Jsonnet program e.g. 'local lib = import "other_preset.jsonnet"`, the extension must be included.
+
 ## Examples
 
 This example uses the fish shell.
