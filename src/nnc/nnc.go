@@ -32,11 +32,11 @@ func (sys *System) spawn(spec ContainerSpec, rstng runSettings) (*os.Process, er
 		[]string{"", marshalSpec(spec)},
 		&os.ProcAttr{
 			Sys: &syscall.SysProcAttr{
-				Cloneflags: syscall.CLONE_NEWNS |
+				Cloneflags: syscall.CLONE_NEWUSER |
+					syscall.CLONE_NEWNS |
 					syscall.CLONE_NEWNET |
 					syscall.CLONE_NEWUTS |
 					syscall.CLONE_NEWPID |
-					syscall.CLONE_NEWUSER |
 					syscall.CLONE_NEWIPC,
 				UidMappings: []syscall.SysProcIDMap{
 					{ContainerID: 0, HostID: os.Getuid(), Size: 1},

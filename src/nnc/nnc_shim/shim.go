@@ -16,7 +16,7 @@ import (
 )
 
 func main() {
-	if len(os.Args) < 2 {
+	if len(os.Args) != 2 {
 		log.Fatalf("nnc_shim: 2 args required")
 	}
 	if err := run(os.Args[1:]); err != nil {
@@ -32,28 +32,32 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
+	// read the main while we still can.
+	mainBin, err := nnc.LoadBin(spec.Main)
+	if err != nil {
+		return fmt.Errorf("loading bin: %w", err)
+	}
+
 	// Create new tmpfs root
 	newRoot, err := os.MkdirTemp("", "newroot")
 	if err != nil {
 		return err
 	}
-	mainBin, err := nnc.LoadBin(spec.Main)
-	if err != nil {
-		return fmt.Errorf("loading bin: %w", err)
-	}
 	if err := prepareMounts(newRoot, spec.Mounts); err != nil {
 		return err
 	}
 
-	const mainPath = "/main"
-	if err := os.WriteFile(mainPath, mainBin, 0o777); err != nil {
-		return err
-	}
-
+	// Set working directory
 	if spec.WorkingDir != "" {
 		if err := os.Chdir(spec.WorkingDir); err != nil {
 			return err
 		}
+	}
+
+	// Run the main.
+	const mainPath = nnc.MainPath
+	if err := os.WriteFile(mainPath, mainBin, 0o555); err != nil {
+		return err
 	}
 	if err := syscall.Exec(mainPath, spec.Args, spec.Env); err != nil {
 		return fmt.Errorf("syscall.Exec: %w", err)
