@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"syscall"
 
 	"go.brendoncarroll.net/nnc/src/nnc"
@@ -38,6 +39,13 @@ func run(args []string) error {
 		return fmt.Errorf("loading bin: %w", err)
 	}
 
+	runtime.LockOSThread()
+	if err := syscall.Unshare(syscall.CLONE_NEWNS |
+		syscall.CLONE_NEWNET |
+		syscall.CLONE_NEWUTS |
+		syscall.CLONE_NEWIPC); err != nil {
+		return err
+	}
 	// Create new tmpfs root
 	newRoot, err := os.MkdirTemp("", "newroot")
 	if err != nil {

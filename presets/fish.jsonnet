@@ -16,4 +16,4 @@ function(spec, caller)
 			"TERM=xterm-256color",
 		],
 		wd: "/_",
-	}
+}
