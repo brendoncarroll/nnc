@@ -7,7 +7,7 @@ function(spec, caller)
 			nnc.mountHostRO("/bin", "/bin"),
 			nnc.mountHostRO("/lib64", "/lib64"),
 			nnc.mountHostRO("/usr", "/usr"),
-			nnc.mountHostRW("/root/.config/fish", caller.envKV["HOME"] + "/.config/fish"),
+			nnc.mountHostRO("/root/.config/fish", nnc.homePath(caller, ".config/fish")),
 			nnc.mountTmpfs("/dev"),
 			nnc.mountHostRW("/_", caller.wd),
 		],
