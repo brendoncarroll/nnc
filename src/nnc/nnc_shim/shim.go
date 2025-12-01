@@ -42,7 +42,8 @@ func run(args []string) error {
 	runtime.LockOSThread()
 	if err := syscall.Unshare(syscall.CLONE_NEWNS |
 		syscall.CLONE_NEWUTS |
-		syscall.CLONE_NEWIPC); err != nil {
+		syscall.CLONE_NEWIPC,
+	); err != nil {
 		return err
 	}
 	if len(spec.Network) == 0 {
@@ -115,10 +116,10 @@ func prepareMounts(newRoot string, mounts []nnc.MountSpec) error {
 		log.Fatalf("chdir /: %v", err)
 	}
 
-	for _, mount := range mounts {
+	for i, mount := range mounts {
 		if mount.IsSystem() {
 			if err := handleMount("/oldroot", "/", mount); err != nil {
-				return fmt.Errorf("failed to handle mount %s: %w", mount.Dst, err)
+				return fmt.Errorf("failed to handle mount %d %s: %w", i, mount.Dst, err)
 			}
 		}
 	}

@@ -4,9 +4,7 @@ package nnc
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"syscall"
 
@@ -70,15 +68,6 @@ func PostBin(x []byte) (blobcache.CID, error) {
 		}
 	}
 	return cid, nil
-}
-
-func AddCapNetAdmin(cid blobcache.CID) error {
-	out, err := exec.Command("sudo", "setcap", "cap_sys_admin+ep cap_net_admin+ep", BinPath(cid)).Output()
-	if err != nil {
-		return err
-	}
-	log.Println("output from setcap", string(out))
-	return nil
 }
 
 func LoadBin(x blobcache.CID) ([]byte, error) {

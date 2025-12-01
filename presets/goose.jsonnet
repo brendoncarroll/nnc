@@ -1,8 +1,9 @@
 local nnc = import "./nnc.libsonnet";
+local netPreset = import "./net.jsonnet";
 
 function(spec, caller)
-
-  spec + {
+  local spec2 = netPreset(spec, caller);
+  spec2 + {
     mounts: nnc.mountsMerge([
       spec.mounts,
       [
@@ -20,5 +21,5 @@ function(spec, caller)
         "GOOSE_DISABLE_KEYRING=yes",
       ],
       nnc.envSelectKeys(caller, ["OPENROUTER_API_KEY"])
-    ])
-  }
+    ]),
+}

@@ -132,12 +132,16 @@ var runCmd = star.Command{
 }
 
 func addSysMounts(m []nnc.MountSpec) []nnc.MountSpec {
-	m = append(m, nnc.MountSpec{
-		Dst: "sys",
-		Src: nnc.MountSrc{
-			SysFS: &struct{}{},
-		},
-	})
+	// TODO: disable sysfs for now, it doesn't always work
+	// depending on if the network namespace is shared.
+	// With all namespaces completely fresh, it appears to work.
+	// Once we always create a fresh network namespace, then we can add this back.
+	// m = append(m, nnc.MountSpec{
+	// 	Dst: "sys",
+	// 	Src: nnc.MountSrc{
+	// 		SysFS: &struct{}{},
+	// 	},
+	// })
 	m = append(m, nnc.MountSpec{
 		Dst: "proc",
 		Src: nnc.MountSrc{
