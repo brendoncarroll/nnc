@@ -13,9 +13,10 @@ const MainPath = "/main"
 
 type MountSrc struct {
 	// TmpFS mounts a tmpfs at the given path
-	TmpFS  *struct{} `json:"tmpfs,omitempty"`
-	ProcFS *struct{} `json:"procfs,omitempty"`
-	SysFS  *struct{} `json:"sysfs,omitempty"`
+	TmpFS    *struct{} `json:"tmpfs,omitempty"`
+	ProcFS   *struct{} `json:"procfs,omitempty"`
+	Devtmpfs *struct{} `json:"devtmpfs,omitempty"`
+	SysFS    *struct{} `json:"sysfs,omitempty"`
 
 	// HostRO mounts a host path into the container, as read-only
 	HostRO *string `json:"host_ro,omitempty"`
@@ -30,6 +31,9 @@ func (m *MountSrc) Validate() error {
 	}
 	if m.ProcFS != nil {
 		set = append(set, "procfs")
+	}
+	if m.Devtmpfs != nil {
+		set = append(set, "devtmpfs")
 	}
 	if m.SysFS != nil {
 		set = append(set, "sysfs")

@@ -12,6 +12,15 @@ local mountHostRW(dst, src) =
 
 local mountTmpfs(dst) =
   mount(dst, {tmpfs: {}});
+  
+local mountProcfs(dst="proc") =
+  mount(dst, {procfs: {}});
+
+local mountSysfs(dst="sys") =
+  mount(dst, {sysfs: {}});
+
+local mountDevtmpfs(dst="dev") =
+  mount(dst, {devtmpfs: {}});
 
 local mountsMerge(xs) =
   std.flattenArrays(xs);
@@ -53,6 +62,9 @@ local homePath(caller, p) =
   mountHostRO :: mountHostRO,
   mountHostRW :: mountHostRW,
   mountTmpfs :: mountTmpfs,
+  mountDevtmpfs :: mountDevtmpfs,
+  mountSysfs :: mountSysfs,
+  mountProcfs :: mountProcfs,
   mountsMerge :: mountsMerge,
 
   netNone :: netNone,

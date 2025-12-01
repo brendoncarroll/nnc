@@ -147,9 +147,12 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 	case mount.Src.TmpFS != nil:
 		return syscall.Mount("", dst, "tmpfs", 0, "")
 	case mount.Src.ProcFS != nil:
-		return syscall.Mount("", mount.Dst, "proc", 0, "")
+		return syscall.Mount("", dst, "proc", 0, "")
 	case mount.Src.SysFS != nil:
-		return syscall.Mount("", mount.Dst, "sysfs", 0, "")
+		return syscall.Mount("", dst, "sysfs", 0, "")
+	case mount.Src.Devtmpfs != nil:
+		return syscall.Mount("", dst, "devtmpfs", 0, "mode=755")
+
 	case mount.Src.HostRO != nil:
 		// log.Println("mounting", dst, "-ro->", filepath.Join(oldRoot, *mount.Src.HostRO))
 		src := filepath.Join(oldRoot, *mount.Src.HostRO)
