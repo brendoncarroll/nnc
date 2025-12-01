@@ -9,7 +9,7 @@ build:
     CGO_ENABLED=0 go build -o ./build/out/nnc ./cmd/nnc
 
 install: build
-    CGO_ENABLED=0 go install ./cmd/nnc
+   cp ./build/out/nnc $HOME/bin/nnc
     
 fish: build
     ./etc/fish.sh
