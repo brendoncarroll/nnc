@@ -41,10 +41,16 @@ func run(args []string) error {
 
 	runtime.LockOSThread()
 	if err := syscall.Unshare(syscall.CLONE_NEWNS |
-		syscall.CLONE_NEWNET |
 		syscall.CLONE_NEWUTS |
 		syscall.CLONE_NEWIPC); err != nil {
 		return err
+	}
+	if len(spec.Network) == 0 {
+		// TODO: for now if there is anything in the network spec
+		// just use the host's namespace
+		if err := syscall.Unshare(syscall.CLONE_NEWNET); err != nil {
+			return err
+		}
 	}
 	// Create new tmpfs root
 	newRoot, err := os.MkdirTemp("", "newroot")
@@ -58,6 +64,12 @@ func run(args []string) error {
 	// Set working directory
 	if spec.WorkingDir != "" {
 		if err := os.Chdir(spec.WorkingDir); err != nil {
+			return err
+		}
+	}
+
+	for _, df := range spec.Data {
+		if err := handleDataFile(df); err != nil {
 			return err
 		}
 	}
@@ -150,6 +162,18 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 		return syscall.Mount(src, dst, "", syscall.MS_BIND, "")
 	default:
 		panic(mount) // Validate should have caught this
+	}
+}
+
+func handleDataFile(df nnc.DataFileSpec) error {
+	switch {
+	case df.Contents.Literal != nil:
+		if err := os.MkdirAll(filepath.Dir(df.Path), 0o755); err != nil {
+			return err
+		}
+		return os.WriteFile(df.Path, []byte(*df.Contents.Literal), df.Mode)
+	default:
+		return fmt.Errorf("empty data file source")
 	}
 }
 

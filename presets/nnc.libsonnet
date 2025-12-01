@@ -26,6 +26,20 @@ local envMerge(xs) =
   );
   std.flattenArrays(xs2);
 
+local netNone(name) = {
+  "name": name,
+  "backend": {},
+};
+
+local dataLit(path, contents, mode=420) =
+  {
+    "path": path,
+    mode: 420,
+    contents : {
+      lit: contents,
+    },
+  };
+
 local homeDir(caller) =
   local h = caller.envKV["HOME"];
   h;
@@ -41,8 +55,12 @@ local homePath(caller, p) =
   mountTmpfs :: mountTmpfs,
   mountsMerge :: mountsMerge,
 
+  netNone :: netNone,
+
   envMerge :: envMerge,
-  envSelectKeys:: envSelectKeys,
+  envSelectKeys :: envSelectKeys,
+
+  dataLit :: dataLit,
 
   homeDir :: homeDir,
   homePath :: homePath,

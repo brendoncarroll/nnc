@@ -2,6 +2,7 @@ package nnc
 
 import (
 	"fmt"
+	"io/fs"
 
 	"blobcache.io/blobcache/src/blobcache"
 )
@@ -78,6 +79,19 @@ type NetBackend struct {
 	None *struct{}
 }
 
+type DataFileSpec struct {
+	// Path is where the file should be written in the container.
+	Path string      `json:"path"`
+	Mode fs.FileMode `json:"mode"`
+
+	Contents DataFileSrc `json:"contents"`
+}
+
+type DataFileSrc struct {
+	// Literal is the literal contents of the file.
+	Literal *string `json:"lit"`
+}
+
 type ContainerSpec struct {
 	// Main is the CID of the binary to run as PID 1
 	Main blobcache.CID `json:"main"`
@@ -93,6 +107,8 @@ type ContainerSpec struct {
 	Mounts []MountSpec `json:"mounts"`
 	// Network are the interfaces to create in the container.
 	Network []NetworkSpec `json:"net"`
+	// Data are files that will be written inside the container.
+	Data []DataFileSpec `json:"data"`
 }
 
 func (s *ContainerSpec) Validate() error {
