@@ -57,6 +57,20 @@ local homePath(caller, p) =
   local hd = homeDir(caller);
   std.join("/", [hd, p]);
 
+local mergeField(f, obj1, obj2) =
+  if std.objectHas(obj1, f) && obj1[f] != null then obj1[f]
+  else if std.objectHas(obj2, f) && obj2[f] != null then obj2[f]
+  else null;
+
+local merge2(a, b) =
+  {
+    mounts: std.flattenArrays([ x for x in [a.mounts, b.mounts] if x != null ]),
+    env: std.flattenArrays([ x for x in [a.env, b.env] if x != null ]),
+    net: std.flattenArrays([ x for x in [a.net, b.net] if x != null ]),
+    data: std.flattenArrays([ x for x in [a.data, b.data] if x != null ]),
+    main: mergeField("main", a, b),
+  };
+
 {
   mount :: mount,
   mountHostRO :: mountHostRO,
@@ -76,4 +90,6 @@ local homePath(caller, p) =
 
   homeDir :: homeDir,
   homePath :: homePath,
+
+  merge2 :: merge2,
 }
