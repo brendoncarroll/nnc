@@ -1,15 +1,12 @@
 local nnc = import "./nnc.libsonnet";
 
 function(spec, caller)
-	nnc.merge2(spec, {
+	nnc.merge([spec, {
 		mounts: [
-			nnc.mountHostRO("/etc/ssl", "/etc/ssl"),
+			nnc.mountHostRO("/etc", "/etc"),
 		],
 		net: [
       nnc.netNone("test123")
     ],
-    data: [
-      nnc.dataLit("/etc/resolv.conf", "nameserver 1.1.1.1"),
-    ]
-})
+}])
 

@@ -57,19 +57,26 @@ local homePath(caller, p) =
   local hd = homeDir(caller);
   std.join("/", [hd, p]);
 
-local mergeField(f, obj1, obj2) =
-  if std.objectHas(obj1, f) && obj1[f] != null then obj1[f]
-  else if std.objectHas(obj2, f) && obj2[f] != null then obj2[f]
+local mergeField(field, a, b, mergeFn) =
+  if std.objectHas(a, field) then
+    if std.objectHas(b, field) then mergeFn(a[field], b[field])
+    else a[field]
+  else if std.objectHas(b, field) then b[field]
   else null;
 
 local merge2(a, b) =
+  local mergeFn(a, b) = std.flattenArrays([x for x in [a, b] if x != null]);
   {
-    mounts: std.flattenArrays([ x for x in [a.mounts, b.mounts] if x != null ]),
-    env: std.flattenArrays([ x for x in [a.env, b.env] if x != null ]),
-    net: std.flattenArrays([ x for x in [a.net, b.net] if x != null ]),
-    data: std.flattenArrays([ x for x in [a.data, b.data] if x != null ]),
-    main: mergeField("main", a, b),
+    mounts: mergeField("mounts", a, b, mergeFn),
+    env: mergeField("env", a, b, mergeFn),
+    net: mergeField("net", a, b, mergeFn),
+    data: mergeField("data", a, b, mergeFn),
+    main: mergeField("main", a, b, function(a, b) b),
   };
+  
+local merge(xs) =
+  if std.length(xs) == 0 then {}
+  else std.foldl(merge2, xs[1:], xs[0]);
 
 {
   mount :: mount,
@@ -92,4 +99,5 @@ local merge2(a, b) =
   homePath :: homePath,
 
   merge2 :: merge2,
+  merge :: merge,
 }

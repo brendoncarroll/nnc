@@ -134,7 +134,7 @@ func (jp JsonnetPreset) Apply(x ContainerSpec) (*ContainerSpec, error) {
 	}
 	jp.vm.TLAReset()
 	jp.vm.TLACode("spec", string(jd))
-	jp.vm.TLACode("caller", string(jsonMarshal(MkResources())))
+	jp.vm.TLACode("caller", string(jsonMarshal(MkCallerCtx())))
 	jout, err := jp.vm.EvaluateFile(jp.main)
 	if err != nil {
 		return nil, err
@@ -146,8 +146,8 @@ func (jp JsonnetPreset) Apply(x ContainerSpec) (*ContainerSpec, error) {
 	return &y, nil
 }
 
-// Resources are the resources available to the process
-type Resources struct {
+// CallerCtx is the resources available to the process
+type CallerCtx struct {
 	Env   []string          `json:"env"`
 	EnvKV map[string]string `json:"envKV"`
 
@@ -155,7 +155,7 @@ type Resources struct {
 	FDs []string `json:"fds"`
 }
 
-func MkResources() Resources {
+func MkCallerCtx() CallerCtx {
 	wd, err := os.Getwd()
 	if err != nil {
 		panic(err)
@@ -169,7 +169,7 @@ func MkResources() Resources {
 		}
 		envkv[parts[0]] = parts[1]
 	}
-	return Resources{
+	return CallerCtx{
 		Env:   os.Environ(),
 		EnvKV: envkv,
 		WD:    wd,
