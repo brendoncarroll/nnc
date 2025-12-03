@@ -3,7 +3,6 @@ package nnc
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -52,13 +51,17 @@ func marshalSpec(spec ContainerSpec) string {
 	}
 	return string(b)
 }
+
 func BinPath(x blobcache.CID) string {
-	return filepath.Join(os.TempDir(), fmt.Sprintf("nnc-%v", x))
+	return filepath.Join(os.TempDir(), "nnc", x.String())
 }
 
 func PostBin(x []byte) (blobcache.CID, error) {
 	cid := blake3.Sum256(x)
 	p := BinPath(cid)
+	if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+		return blobcache.CID{}, err
+	}
 	_, err := os.Stat(p)
 	if err != nil && !os.IsNotExist(err) {
 		return blobcache.CID{}, err
