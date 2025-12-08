@@ -1,6 +1,6 @@
 local nnc = import "./nnc.libsonnet";
 
-function(spec, caller)
+function(ctx, spec)
 	nnc.merge([spec, {
 		mounts: [
 			nnc.mountHostRO("/etc", "/etc"),

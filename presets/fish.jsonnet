@@ -1,18 +1,18 @@
 local nnc = import "./nnc.libsonnet";
 
-function(spec, caller)
+function(ctx, spec)
 	spec +
 	{
 		mounts: nnc.mountsMerge([spec.mounts, [
 			nnc.mountHostRO("/bin", "/bin"),
 			nnc.mountHostRO("/lib64", "/lib64"),
 			nnc.mountHostRO("/usr", "/usr"),
-			nnc.mountHostRO("/root/.config/fish", nnc.homePath(caller, ".config/fish")),
+			nnc.mountHostRO("/root/.config/fish", nnc.homePath(ctx, ".config/fish")),
 
 			nnc.mountTmpfs("/dev"),
 			nnc.mountProcfs(),
 
-			nnc.mountHostRW("/_", caller.wd),
+			nnc.mountHostRW("/_", ctx.wd),
 		]]),
 		env: [
 			"HOME=/root",

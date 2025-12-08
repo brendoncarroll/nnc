@@ -139,10 +139,39 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 		return err
 	}
 	dst := filepath.Join(newRoot, mount.Dst)
-	// Create mount point if it doesn't exist
-	if err := os.MkdirAll(dst, 0o755); err != nil {
-		return fmt.Errorf("failed to create mount point: %w", err)
+
+	isFile := false
+	switch {
+	case mount.Src.HostRO != nil:
+		src := filepath.Join(oldRoot, *mount.Src.HostRO)
+		srcInfo, err := os.Stat(src)
+		if err != nil {
+			return err
+		}
+		isFile = !srcInfo.IsDir()
+	case mount.Src.HostRW != nil:
+		src := filepath.Join(oldRoot, *mount.Src.HostRW)
+		srcInfo, err := os.Stat(src)
+		if err != nil {
+			return fmt.Errorf("performing stat on %s %w", src, err)
+		}
+		isFile = !srcInfo.IsDir()
 	}
+
+	// Create mount point if it doesn't exist
+	if isFile {
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			return fmt.Errorf("failed to create mount point: %w", err)
+		}
+		if err := os.WriteFile(dst, nil, 777); err != nil {
+			return err
+		}
+	} else {
+		if err := os.MkdirAll(dst, 0o755); err != nil {
+			return fmt.Errorf("failed to create mount point: %w", err)
+		}
+	}
+
 	switch {
 	case mount.Src.TmpFS != nil:
 		return syscall.Mount("", dst, "tmpfs", 0, "")

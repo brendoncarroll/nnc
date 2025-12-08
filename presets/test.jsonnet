@@ -1,6 +1,6 @@
 local nnc = import "./nnc.libsonnet";
 
-function (spec)
+function (ctx, spec)
   spec +
   {
     mounts: [

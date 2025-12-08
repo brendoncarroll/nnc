@@ -25,9 +25,6 @@ local mountDevtmpfs(dst="dev") =
 local mountsMerge(xs) =
   std.flattenArrays(xs);
 
-local envSelectKeys(caller, keys) =
-    std.map(function(k) k+"="+caller.envKV[k], keys);
-
 local envMerge(xs) =
   local xs2 = std.map(
     function(x) if x == null then [] else x,
@@ -49,13 +46,16 @@ local dataLit(path, contents, mode=420) =
     },
   };
 
-local homeDir(caller) =
-  local h = caller.envKV["HOME"];
+local homeDir(ctx) =
+  local h = ctx.envKV["HOME"];
   h;
 
-local homePath(caller, p) =
-  local hd = homeDir(caller);
+local homePath(ctx, p) =
+  local hd = homeDir(ctx);
   std.join("/", [hd, p]);
+
+local selectEnvKeys(ctx, keys) =
+    std.map(function(k) k+"="+ctx.envKV[k], keys);
 
 local mergeField(field, a, b, mergeFn) =
   if std.objectHas(a, field) then
@@ -72,6 +72,7 @@ local merge2(a, b) =
     net: mergeField("net", a, b, mergeFn),
     data: mergeField("data", a, b, mergeFn),
     main: mergeField("main", a, b, function(a, b) b),
+    wd: mergeField("wd", a, b, function(a, b) b),
   };
   
 local merge(xs) =
@@ -91,13 +92,12 @@ local merge(xs) =
   netNone :: netNone,
 
   envMerge :: envMerge,
-  envSelectKeys :: envSelectKeys,
 
   dataLit :: dataLit,
 
   homeDir :: homeDir,
   homePath :: homePath,
+  selectEnvKeys :: selectEnvKeys,
 
-  merge2 :: merge2,
   merge :: merge,
 }

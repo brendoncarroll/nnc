@@ -133,8 +133,8 @@ func (jp JsonnetPreset) Apply(x ContainerSpec) (*ContainerSpec, error) {
 		return nil, err
 	}
 	jp.vm.TLAReset()
+	jp.vm.TLACode("ctx", string(jsonMarshal(MkCallerCtx())))
 	jp.vm.TLACode("spec", string(jd))
-	jp.vm.TLACode("caller", string(jsonMarshal(MkCallerCtx())))
 	jout, err := jp.vm.EvaluateFile(jp.main)
 	if err != nil {
 		return nil, err
@@ -151,8 +151,9 @@ type CallerCtx struct {
 	Env   []string          `json:"env"`
 	EnvKV map[string]string `json:"envKV"`
 
-	WD  string   `json:"wd"`
-	FDs []string `json:"fds"`
+	WD     string   `json:"wd"`
+	FDs    []string `json:"fds"`
+	UserID int      `json:"uid"`
 }
 
 func MkCallerCtx() CallerCtx {
@@ -170,9 +171,10 @@ func MkCallerCtx() CallerCtx {
 		envkv[parts[0]] = parts[1]
 	}
 	return CallerCtx{
-		Env:   os.Environ(),
-		EnvKV: envkv,
-		WD:    wd,
+		Env:    os.Environ(),
+		EnvKV:  envkv,
+		WD:     wd,
+		UserID: os.Geteuid(),
 	}
 }
 

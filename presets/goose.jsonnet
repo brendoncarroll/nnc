@@ -1,15 +1,14 @@
 local nnc = import "./nnc.libsonnet";
 local netPreset = import "./net.jsonnet";
+local waylandPreset = import "./wayland.jsonnet";
 
-function(spec, caller)
+function(ctx, spec)
   nnc.merge([
     spec,
-    netPreset(spec, caller),
-    
+    netPreset(ctx, spec),
+    waylandPreset(ctx, spec),  
     {
-        mounts: nnc.mountsMerge([
-          spec.mounts,
-          [
+        mounts: [
             nnc.mountHostRO("/bin", "/bin"),
             nnc.mountHostRO("/sbin", "/sbin"),
       			nnc.mountHostRW("/lib", "/lib"),
@@ -17,23 +16,21 @@ function(spec, caller)
       			nnc.mountHostRO("/usr", "/usr"),
       			nnc.mountTmpfs("/tmp"),
 
-            nnc.mountHostRO("/root/.config/goose", nnc.homePath(caller, ".config/goose")),
-      			nnc.mountHostRW("/_", caller.wd),
-          ],
-        ]),
+            nnc.mountHostRO("/root/.config/goose", nnc.homePath(ctx, ".config/goose")),
+      			nnc.mountHostRW("/_", ctx.wd),
+        ],
         env: nnc.envMerge([
-          spec.env,
           [
             "HOME=/root",
             "PATH=/bin:/usr/bin:/sbin:/usr/local/bin",
             "GOOSE_DISABLE_KEYRING=yes",
           ],
-          nnc.envSelectKeys(caller, [
+          nnc.selectEnvKeys(ctx, [
             "OPENROUTER_API_KEY",
             "TERM",
           ])
         ]),
     		wd: "/_",
-    }    
+    }
   ])
-  
+
