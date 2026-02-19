@@ -4,15 +4,15 @@ No Nonsense Containers (NNC) is a CLI tool for
 running programs on Linux using the kernel's isolation primitives
 to enforce the principle of least authority.
 
-The example below would launch the fish shell with several directories passed through, and HOME set to /root inside the container.
+The example below would launch the fish shell with several files and directories passed through, and HOME set to /root inside the container.
 ```
 nnc run \
-  --dr /usr:/usr \
-  --dr /bin:/bin \
-  --dr /lib64:/lib64 \
-  --dr /root/.config/fish:$HOME/.config/fish \
+  --mro /usr:/usr \
+  --mro /bin:/bin \
+  --mro /lib64:/lib64 \
+  --mro /root/.config/fish:$HOME/.config/fish \
   --env HOME=/root \
-  --dr "/x:$(pwd)" \
+  --mro "/x:$(pwd)" \
   /bin/fish
 ```
 
@@ -53,8 +53,8 @@ to contribute Presets.
 
 ### Done
 - Secure-by-default process isolation.
-- Mount a read-only file/directory/socket from the host
-- Mount a read-write file/directory/socket from the host
+- Mount a read-only file or directory from the host
+- Mount a read-write file or directory from the host
 - Set environment variables in the container
 - Pass arguments to the container process
 - Give the container network access, as if it was a process on the host.

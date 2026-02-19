@@ -28,8 +28,8 @@ var enterCmd = star.Command{
 	},
 	Pos: []star.Positional{mainParam, argsParam},
 	Flags: map[string]star.Flag{
-		"dr":     droParam,
-		"dw":     drwParam,
+		"mro":    mroParam,
+		"mrw":    mrwParam,
 		"dev":    devParam,
 		"env":    envParam,
 		"preset": presetsParam,
@@ -80,8 +80,8 @@ var printSpecCmd = star.Command{
 
 	Pos: []star.Positional{mainParam, argsParam},
 	Flags: map[string]star.Flag{
-		"dr":     droParam,
-		"dw":     drwParam,
+		"mro":    mroParam,
+		"mrw":    mrwParam,
 		"dev":    devParam,
 		"env":    envParam,
 		"preset": presetsParam,
@@ -106,8 +106,8 @@ var runCmd = star.Command{
 	},
 	Pos: []star.Positional{mainParam, argsParam},
 	Flags: map[string]star.Flag{
-		"dr":     droParam,
-		"dw":     drwParam,
+		"mro":    mroParam,
+		"mrw":    mrwParam,
 		"dev":    devParam,
 		"env":    envParam,
 		"ldd":    lddParam,
@@ -163,8 +163,8 @@ func addSysMounts(m []nnc.MountSpec) []nnc.MountSpec {
 // configure configures cspec, using parameters from c
 // and returns a copy of cspec with the configuration applied.
 func configure(cspec nnc.ContainerSpec, c star.Context) (*nnc.ContainerSpec, error) {
-	dros := droParam.Load(c)
-	drws := drwParam.Load(c)
+	dros := mroParam.Load(c)
+	drws := mrwParam.Load(c)
 	devs := devParam.Load(c)
 	cspec.Mounts = addSysMounts(cspec.Mounts)
 	cspec.Mounts = append(cspec.Mounts, dros...)
@@ -203,16 +203,16 @@ var mainParam = star.Optional[[]byte]{
 	ShortDoc: "the filepath to the program to run in the container",
 }
 
-var droParam = star.Repeated[nnc.MountSpec]{
-	ID:       "dir-ro",
+var mroParam = star.Repeated[nnc.MountSpec]{
+	ID:       "mount-ro",
 	Parse:    parseMountSpec(false),
-	ShortDoc: "mount a directory read-only in the container",
+	ShortDoc: "mount a file or directory read-only in the container",
 }
 
-var drwParam = star.Repeated[nnc.MountSpec]{
-	ID:       "dir-rw",
+var mrwParam = star.Repeated[nnc.MountSpec]{
+	ID:       "mount-rw",
 	Parse:    parseMountSpec(true),
-	ShortDoc: "mount a directory read-write in the container",
+	ShortDoc: "mount a file or directory read-write in the container",
 }
 
 var devParam = star.Repeated[nnc.MountSpec]{
