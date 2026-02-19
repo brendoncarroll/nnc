@@ -156,6 +156,8 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 			return fmt.Errorf("performing stat on %s %w", src, err)
 		}
 		isFile = !srcInfo.IsDir()
+	case mount.Src.HostDev != nil:
+		isFile = true
 	}
 
 	// Create mount point if it doesn't exist
@@ -163,7 +165,7 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 			return fmt.Errorf("failed to create mount point: %w", err)
 		}
-		if err := os.WriteFile(dst, nil, 777); err != nil {
+		if err := os.WriteFile(dst, nil, 0o777); err != nil {
 			return err
 		}
 	} else {
@@ -193,6 +195,19 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 		// log.Println("mounting", dst, "->", filepath.Join(oldRoot, *mount.Src.HostRW))
 		src := filepath.Join(oldRoot, *mount.Src.HostRW)
 		return syscall.Mount(src, dst, "", syscall.MS_BIND, "")
+	case mount.Src.HostDev != nil:
+		fd := *mount.Src.HostDev
+		fdPath := fmt.Sprintf("/proc/self/fd/%d", fd)
+		// Debug: verify the fd is valid
+		if _, err := os.Stat(fdPath); err != nil {
+			log.Printf("nnc_shim: WARNING: fd %d not available at %s: %v", fd, fdPath, err)
+		} else {
+			target, _ := os.Readlink(fdPath)
+			log.Printf("nnc_shim: fd %d -> %s", fd, target)
+		}
+		// Remove the placeholder file and create a symlink to /proc/1/fd/N
+		os.Remove(dst)
+		return os.Symlink(fmt.Sprintf("/proc/1/fd/%d", fd), dst)
 	default:
 		panic(mount) // Validate should have caught this
 	}

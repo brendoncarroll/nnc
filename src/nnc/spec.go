@@ -20,8 +20,12 @@ type MountSrc struct {
 
 	// HostRO mounts a host path into the container, as read-only
 	HostRO *string `json:"host_ro,omitempty"`
-	// HostRW mounts a host path into the container, as read-only
+	// HostRW mounts a host path into the container, as read-write
 	HostRW *string `json:"host_rw,omitempty"`
+
+	// HostDev passes a pre-opened device fd into the container.
+	// The value is the fd number as a string, set by the host process.
+	HostDev *int `json:"host_dev,omitempty"`
 }
 
 func (m *MountSrc) Validate() error {
@@ -43,6 +47,9 @@ func (m *MountSrc) Validate() error {
 	}
 	if m.HostRW != nil {
 		set = append(set, "host_rw")
+	}
+	if m.HostDev != nil {
+		set = append(set, "host_dev")
 	}
 	if len(set) != 1 {
 		return fmt.Errorf("exactly one of tmpfs, procfs, or sysfs must be set")
