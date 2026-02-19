@@ -101,6 +101,8 @@ type DataFileSpec struct {
 type DataFileSrc struct {
 	// Literal is the literal contents of the file.
 	Literal *string `json:"lit"`
+	// HostPath reads the file from a path on the host.
+	HostPath *string `json:"host_path"`
 }
 
 type ContainerSpec struct {

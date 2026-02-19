@@ -23,6 +23,7 @@ function(ctx, spec)
             nnc.mountTmpfs("/root/.amp"),
             nnc.mountHostRW("/root/.local/share/amp", nnc.homePath(ctx, ".local/share/amp")),
             nnc.mountHostRW("/root/.config/amp", nnc.homePath(ctx, ".config/amp")),
+
             nnc.mountHostRW("/_", ctx.wd),
         ],
         env: nnc.envMerge([

@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -101,11 +102,16 @@ func MakeFileSummaries(fsys fs.FS, p string) (ret []FileSummary, _ error) {
 			}
 			return err
 		}
-		ret = append(ret, FileSummary{
+		fs := FileSummary{
 			Path: filepath.Join(dirp, d.Name()),
 			Size: finfo.Size(),
 			Mode: finfo.Mode(),
-		})
+		}
+		if stat, ok := finfo.Sys().(*syscall.Stat_t); ok {
+			fs.UID = int(stat.Uid)
+			fs.GID = int(stat.Gid)
+		}
+		ret = append(ret, fs)
 		return nil
 	})
 	return ret, err
@@ -115,4 +121,6 @@ type FileSummary struct {
 	Path string
 	Size int64
 	Mode fs.FileMode
+	UID  int
+	GID  int
 }

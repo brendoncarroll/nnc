@@ -7,6 +7,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -58,19 +59,13 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
-	if err := prepareMounts(newRoot, spec.Mounts); err != nil {
+	if err := prepareMounts(newRoot, spec.Mounts, spec.Data); err != nil {
 		return err
 	}
 
 	// Set working directory
 	if spec.WorkingDir != "" {
 		if err := os.Chdir(spec.WorkingDir); err != nil {
-			return err
-		}
-	}
-
-	for _, df := range spec.Data {
-		if err := handleDataFile(df); err != nil {
 			return err
 		}
 	}
@@ -86,7 +81,7 @@ func run(args []string) error {
 	return nil
 }
 
-func prepareMounts(newRoot string, mounts []nnc.MountSpec) error {
+func prepareMounts(newRoot string, mounts []nnc.MountSpec, data []nnc.DataFileSpec) error {
 	// First, ensure we're in a new mount namespace
 	if err := syscall.Mount("", "/", "", syscall.MS_PRIVATE|syscall.MS_REC, ""); err != nil {
 		return fmt.Errorf("failed to make mount namespace private: %w", err)
@@ -101,6 +96,12 @@ func prepareMounts(newRoot string, mounts []nnc.MountSpec) error {
 			if err := handleMount("/", newRoot, mount); err != nil {
 				return fmt.Errorf("failed to handle mount %s: %w", mount.Dst, err)
 			}
+		}
+	}
+	// Copy data files before pivot_root, while host paths are still accessible.
+	for _, df := range data {
+		if err := handleDataFile(newRoot, df); err != nil {
+			return fmt.Errorf("failed to handle data file %s: %w", df.Path, err)
 		}
 	}
 	// Make old root a mount point
@@ -206,16 +207,65 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 	}
 }
 
-func handleDataFile(df nnc.DataFileSpec) error {
+func handleDataFile(newRoot string, df nnc.DataFileSpec) error {
+	dst := filepath.Join(newRoot, df.Path)
 	switch {
 	case df.Contents.Literal != nil:
-		if err := os.MkdirAll(filepath.Dir(df.Path), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
 			return err
 		}
-		return os.WriteFile(df.Path, []byte(*df.Contents.Literal), df.Mode)
+		return os.WriteFile(dst, []byte(*df.Contents.Literal), df.Mode)
+	case df.Contents.HostPath != nil:
+		return copyPath(*df.Contents.HostPath, dst, df.Mode)
 	default:
 		return fmt.Errorf("empty data file source")
 	}
+}
+
+func copyPath(src, dst string, mode fs.FileMode) error {
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return copyDir(src, dst, mode)
+	}
+	return copyFile(src, dst, mode)
+}
+
+func copyFile(src, dst string, mode fs.FileMode) error {
+	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+		return err
+	}
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(dst, data, mode)
+}
+
+func copyDir(src, dst string, mode fs.FileMode) error {
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(dst, 0o755); err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		srcPath := filepath.Join(src, entry.Name())
+		dstPath := filepath.Join(dst, entry.Name())
+		if entry.IsDir() {
+			if err := copyDir(srcPath, dstPath, mode); err != nil {
+				return err
+			}
+		} else {
+			if err := copyFile(srcPath, dstPath, mode); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func parseSpec(x string) (*nnc.ContainerSpec, error) {

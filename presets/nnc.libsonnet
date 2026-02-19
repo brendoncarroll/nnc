@@ -43,9 +43,18 @@ local netNone(name) = {
 local dataLit(path, contents, mode=420) =
   {
     "path": path,
-    mode: 420,
+    mode: mode,
     contents : {
       lit: contents,
+    },
+  };
+
+local copyHostPath(path, hostPath, mode=420) =
+  {
+    "path": path,
+    mode: mode,
+    contents : {
+      host_path: hostPath,
     },
   };
 
@@ -98,6 +107,7 @@ local merge(xs) =
   envMerge :: envMerge,
 
   dataLit :: dataLit,
+  copyHostPath :: copyHostPath,
 
   homeDir :: homeDir,
   homePath :: homePath,

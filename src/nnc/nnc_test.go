@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"blobcache.io/blobcache/src/blobcache"
@@ -25,6 +26,10 @@ func TestRun(t *testing.T) {
 		ExitCode int
 		Check    func(testing.TB, *testutil.ProcSummary)
 	}
+	// Create a file in scratchDir to use as a data file source.
+	dataDir := t.TempDir()
+	require.NoError(t, os.WriteFile(filepath.Join(dataDir, "test.conf"), []byte("hello"), 0o644))
+
 	tcs := []testCase{
 		{
 			Name: "EnvVar1",
@@ -68,6 +73,33 @@ func TestRun(t *testing.T) {
 					},
 				},
 			}},
+		{
+			Name: "DataHostPath",
+			Spec: ContainerSpec{
+				Main: testBinCID,
+				Data: []DataFileSpec{
+					{
+						Path: "/etc/copied",
+						Mode: 0o644,
+						Contents: DataFileSrc{
+							HostPath: &dataDir,
+						},
+					},
+				},
+			},
+			Check: func(t testing.TB, ps *testutil.ProcSummary) {
+				var found bool
+				for _, f := range ps.Files {
+					if f.Path == "etc/copied/test.conf/test.conf" {
+						found = true
+						require.Equal(t, 0, f.UID, "file should be owned by root (uid 0) inside container")
+						require.Equal(t, 0, f.GID, "file should be owned by root (gid 0) inside container")
+						break
+					}
+				}
+				require.True(t, found, "expected to find test.conf in container files")
+			},
+		},
 	}
 
 	shimBin := setup(t)
