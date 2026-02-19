@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,27 +29,21 @@ func ApplyPresets(init ContainerSpec, presets ...Preset) (*ContainerSpec, error)
 	return &x, nil
 }
 
+// OpenPresetDir opens the user's preset directory at $HOME/.config/nnc/presets.
 func OpenPresetDir() (*os.Root, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return nil, err
 	}
-	cfgDir := filepath.Join(homeDir, ".config/nnc/presets")
-	if err := os.MkdirAll(cfgDir, 0o755); err != nil {
-		return nil, err
-	}
-	r, err := os.OpenRoot(cfgDir)
-	if err != nil {
-		return nil, err
-	}
-	return r, nil
+	presetsDir := filepath.Join(homeDir, ".config/nnc/presets")
+	return os.OpenRoot(presetsDir)
 }
 
 const jsonnetExt = ".jsonnet"
 
 type Source struct {
 	Prefix string
-	Root   *os.Root
+	Root   fs.FS
 }
 
 var _ jsonnet.Importer = &JSImporter{}

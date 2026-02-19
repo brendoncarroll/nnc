@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"go.brendoncarroll.net/nnc/presets"
 	"go.brendoncarroll.net/nnc/src/nnc"
 	"go.brendoncarroll.net/star"
 )
@@ -252,6 +253,9 @@ var argsParam = star.Repeated[string]{
 }
 
 func getSources() ([]nnc.Source, error) {
+	var sources []nnc.Source
+
+	// 1. Always search relative to current working directory for ./ paths
 	wdPath, err := os.Getwd()
 	if err != nil {
 		return nil, err
@@ -260,14 +264,22 @@ func getSources() ([]nnc.Source, error) {
 	if err != nil {
 		return nil, err
 	}
-	presetDir, err := nnc.OpenPresetDir()
-	if err != nil {
+	sources = append(sources, nnc.Source{Prefix: "./", Root: wdRoot.FS()})
+
+	// 2. Check $HOME/.config/nnc/presets if it exists
+	homePresetDir, err := nnc.OpenPresetDir()
+	if err != nil && !os.IsNotExist(err) {
 		return nil, err
 	}
-	return []nnc.Source{
-		{Prefix: "./", Root: wdRoot},
-		{Prefix: "", Root: presetDir},
-	}, nil
+	// if it doesn't exist then don't add it.
+	if homePresetDir != nil {
+		sources = append(sources, nnc.Source{Prefix: "", Root: homePresetDir.FS()})
+	}
+
+	// 3. Use embedded presets as fallback
+	sources = append(sources, nnc.Source{Prefix: "", Root: presets.FS})
+
+	return sources, nil
 }
 
 func parseDevSpec(x string) (nnc.MountSpec, error) {

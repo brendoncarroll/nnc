@@ -16,6 +16,12 @@ nnc run \
   /bin/fish
 ```
 
+This example runs the amp agent in a sandbox, with access to the current working directory.
+The exact configuration is in `presets/amp.jsonnet`
+```
+nnc run ~/bin/amp --preset amp
+```
+
 Unlike with other containerization tools, like Docker,
 it is always assumed that resources should *not* be
 passed on by default.
@@ -48,6 +54,11 @@ Once all the presets have been applied, the child process is created according t
 
 The presets directory in this repository contains presets for common applications, and users are encouraged
 to contribute Presets.
+
+### Preset lookup
+
+Preset paths starting with `./` are resolved relative to the current directory.
+Otherwise, nnc searches `$HOME/.config/nnc` first, then falls back to the standard library (the `presets` directory in this repository).
 
 ## Done/Goals/Non-Goals
 
