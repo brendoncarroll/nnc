@@ -4,12 +4,13 @@ local minDev = import "./min-dev.jsonnet";
 local etcPasswd = import "./etc-passwd.jsonnet";
 
 function(ctx, spec)
-  nnc.applyAll(ctx, spec, [
+  local applied = nnc.applyAll(ctx, spec, [
     netPreset,
     minDev,
     etcPasswd,
-  ]) + {
-    mounts: nnc.mountsMerge([spec.mounts, [
+  ]);
+  applied + {
+    mounts: nnc.mountsMerge([applied.mounts, [
         nnc.mountHostRO("/bin", "/bin"),
         nnc.mountHostRO("/sbin", "/sbin"),
         nnc.mountHostRW("/lib", "/lib"),
@@ -28,7 +29,7 @@ function(ctx, spec)
         nnc.mountHostRW("/_", ctx.wd),
     ]]),
     env: nnc.envMerge([
-      spec.env,
+      applied.env,
       [
         "HOME=/root",
         "PATH=/root/.amp/bin:/bin:/usr/bin:/sbin:/usr/local/bin",
