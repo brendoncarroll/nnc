@@ -45,7 +45,7 @@ func (sys *System) spawn(spec ContainerSpec, rstng runSettings) (*os.Process, er
 		files = append(files, f)
 	}
 	proc, err := os.StartProcess(shimPath,
-		[]string{"", marshalSpec(spec)},
+		[]string{"main", marshalSpec(spec)},
 		&os.ProcAttr{
 			Sys: &syscall.SysProcAttr{
 				Cloneflags: syscall.CLONE_NEWUSER |

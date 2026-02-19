@@ -197,15 +197,6 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 		return syscall.Mount(src, dst, "", syscall.MS_BIND, "")
 	case mount.Src.HostDev != nil:
 		fd := *mount.Src.HostDev
-		fdPath := fmt.Sprintf("/proc/self/fd/%d", fd)
-		// Debug: verify the fd is valid
-		if _, err := os.Stat(fdPath); err != nil {
-			log.Printf("nnc_shim: WARNING: fd %d not available at %s: %v", fd, fdPath, err)
-		} else {
-			target, _ := os.Readlink(fdPath)
-			log.Printf("nnc_shim: fd %d -> %s", fd, target)
-		}
-		// Remove the placeholder file and create a symlink to /proc/1/fd/N
 		os.Remove(dst)
 		return os.Symlink(fmt.Sprintf("/proc/1/fd/%d", fd), dst)
 	default:
