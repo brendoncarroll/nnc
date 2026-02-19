@@ -26,7 +26,11 @@ local mountDev(name) =
   mount("dev/" + name, {host_dev: 0});
 
 local mountsMerge(xs) =
-  std.flattenArrays(xs);
+  local xs2 = std.map(
+    function(x) if x == null then [] else x,
+    xs
+  );
+  std.flattenArrays(xs2);
 
 local envMerge(xs) =
   local xs2 = std.map(
@@ -69,27 +73,8 @@ local homePath(ctx, p) =
 local selectEnvKeys(ctx, keys) =
     std.map(function(k) k+"="+ctx.envKV[k], keys);
 
-local mergeField(field, a, b, mergeFn) =
-  if std.objectHas(a, field) then
-    if std.objectHas(b, field) then mergeFn(a[field], b[field])
-    else a[field]
-  else if std.objectHas(b, field) then b[field]
-  else null;
-
-local merge2(a, b) =
-  local mergeFn(a, b) = std.flattenArrays([x for x in [a, b] if x != null]);
-  {
-    mounts: mergeField("mounts", a, b, mergeFn),
-    env: mergeField("env", a, b, mergeFn),
-    net: mergeField("net", a, b, mergeFn),
-    data: mergeField("data", a, b, mergeFn),
-    main: mergeField("main", a, b, function(a, b) b),
-    wd: mergeField("wd", a, b, function(a, b) b),
-  };
-  
-local merge(xs) =
-  if std.length(xs) == 0 then {}
-  else std.foldl(merge2, xs[1:], xs[0]);
+local applyAll(ctx, spec, presets) =
+  std.foldl(function(acc, preset) preset(ctx, acc), presets, spec);
 
 {
   mount :: mount,
@@ -113,5 +98,5 @@ local merge(xs) =
   homePath :: homePath,
   selectEnvKeys :: selectEnvKeys,
 
-  merge :: merge,
+  applyAll :: applyAll,
 }

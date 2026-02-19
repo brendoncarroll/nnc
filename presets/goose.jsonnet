@@ -3,12 +3,11 @@ local netPreset = import "./net.jsonnet";
 local waylandPreset = import "./wayland.jsonnet";
 
 function(ctx, spec)
-  nnc.merge([
-    spec,
-    netPreset(ctx, spec),
-    waylandPreset(ctx, spec),  
-    {
-        mounts: [
+  nnc.applyAll(ctx, spec, [
+    netPreset,
+    waylandPreset,
+    function(ctx, spec) spec + {
+        mounts: nnc.mountsMerge([spec.mounts, [
             nnc.mountHostRO("/bin", "/bin"),
             nnc.mountHostRO("/sbin", "/sbin"),
       			nnc.mountHostRW("/lib", "/lib"),
@@ -18,8 +17,9 @@ function(ctx, spec)
 
             nnc.mountHostRO("/root/.config/goose", nnc.homePath(ctx, ".config/goose")),
       			nnc.mountHostRW("/_", ctx.wd),
-        ],
+        ]]),
         env: nnc.envMerge([
+          spec.env,
           [
             "HOME=/root",
             "PATH=/bin:/usr/bin:/sbin:/usr/local/bin",
@@ -31,6 +31,5 @@ function(ctx, spec)
           ])
         ]),
     		wd: "/_",
-    }
+    },
   ])
-

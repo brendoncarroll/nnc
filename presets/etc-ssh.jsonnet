@@ -1,8 +1,8 @@
 local nnc = import "./nnc.libsonnet";
 
 function(ctx, spec)
-  nnc.merge([spec, {
-    data: [
+  spec + {
+    data: nnc.mountsMerge([spec.data, [
       nnc.copyHostPath("/etc/ssh", "/etc/ssh", 420),
-    ],
-  }])
+    ]]),
+  }

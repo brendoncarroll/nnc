@@ -1,12 +1,12 @@
 local nnc = import "./nnc.libsonnet";
 
 function(ctx, spec)
-	nnc.merge([spec, {
-		mounts: [
-			nnc.mountHostRO("/etc", "/etc"),
-		],
-		net: [
+	spec + {
+		data: nnc.mountsMerge([spec.data, [
+			nnc.copyHostPath("/etc/resolv.conf", "/etc/resolv.conf"),
+			nnc.copyHostPath("/etc/resolvconf.conf", "/etc/resolvconf.conf"),
+		]]),
+		net: nnc.mountsMerge([spec.net, [
       nnc.netNone("test123")
-    ],
-}])
-
+    ]]),
+	}

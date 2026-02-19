@@ -1,8 +1,7 @@
 local nnc = import "./nnc.libsonnet";
 
 function(ctx, spec)
-	spec +
-	{
+	spec + {
 		mounts: nnc.mountsMerge([spec.mounts, [
 			nnc.mountHostRO("/bin", "/bin"),
 			nnc.mountHostRO("/lib64", "/lib64"),
@@ -19,4 +18,4 @@ function(ctx, spec)
 			"TERM=xterm-256color",
 		],
 		wd: "/_",
-}
+	}
