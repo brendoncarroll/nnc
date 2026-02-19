@@ -22,6 +22,9 @@ local mountSysfs(dst="sys") =
 local mountDevtmpfs(dst="dev") =
   mount(dst, {devtmpfs: {}});
 
+local mountDev(name) =
+  mount("dev/" + name, {host_dev: 0});
+
 local mountsMerge(xs) =
   std.flattenArrays(xs);
 
@@ -84,6 +87,7 @@ local merge(xs) =
   mountHostRO :: mountHostRO,
   mountHostRW :: mountHostRW,
   mountTmpfs :: mountTmpfs,
+  mountDev :: mountDev,
   mountDevtmpfs :: mountDevtmpfs,
   mountSysfs :: mountSysfs,
   mountProcfs :: mountProcfs,

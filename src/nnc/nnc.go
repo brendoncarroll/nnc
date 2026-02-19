@@ -3,6 +3,7 @@ package nnc
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"syscall"
@@ -25,8 +26,26 @@ func (sys *System) spawn(spec ContainerSpec, rstng runSettings) (*os.Process, er
 	if spec.Env == nil {
 		spec.Env = []string{}
 	}
-	return os.StartProcess(shimPath,
-		[]string{"", marshalSpec(spec)},
+	files := append([]*os.File{}, rstng.files...)
+	var devFiles []*os.File
+	for i := range spec.Mounts {
+		m := &spec.Mounts[i]
+		if m.Src.HostDev == nil {
+			continue
+		}
+		devPath := "/" + m.Dst
+		f, err := os.OpenFile(devPath, os.O_RDWR, 0)
+		if err != nil {
+			closeAll(devFiles)
+			return nil, fmt.Errorf("opening device %s: %w", devPath, err)
+		}
+		devFiles = append(devFiles, f)
+		fd := len(files)
+		m.Src.HostDev = &fd
+		files = append(files, f)
+	}
+	proc, err := os.StartProcess(shimPath,
+		[]string{"main", marshalSpec(spec)},
 		&os.ProcAttr{
 			Sys: &syscall.SysProcAttr{
 				Cloneflags: syscall.CLONE_NEWUSER |
@@ -39,9 +58,17 @@ func (sys *System) spawn(spec ContainerSpec, rstng runSettings) (*os.Process, er
 				},
 			},
 			Env:   spec.Env,
-			Files: rstng.files,
+			Files: files,
 		},
 	)
+	closeAll(devFiles)
+	return proc, err
+}
+
+func closeAll(files []*os.File) {
+	for _, f := range files {
+		f.Close()
+	}
 }
 
 func marshalSpec(spec ContainerSpec) string {

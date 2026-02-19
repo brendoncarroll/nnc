@@ -30,6 +30,7 @@ var enterCmd = star.Command{
 	Flags: map[string]star.Flag{
 		"dr":     droParam,
 		"dw":     drwParam,
+		"dev":    devParam,
 		"env":    envParam,
 		"preset": presetsParam,
 	},
@@ -81,6 +82,7 @@ var printSpecCmd = star.Command{
 	Flags: map[string]star.Flag{
 		"dr":     droParam,
 		"dw":     drwParam,
+		"dev":    devParam,
 		"env":    envParam,
 		"preset": presetsParam,
 	},
@@ -106,6 +108,7 @@ var runCmd = star.Command{
 	Flags: map[string]star.Flag{
 		"dr":     droParam,
 		"dw":     drwParam,
+		"dev":    devParam,
 		"env":    envParam,
 		"ldd":    lddParam,
 		"preset": presetsParam,
@@ -162,9 +165,11 @@ func addSysMounts(m []nnc.MountSpec) []nnc.MountSpec {
 func configure(cspec nnc.ContainerSpec, c star.Context) (*nnc.ContainerSpec, error) {
 	dros := droParam.Load(c)
 	drws := drwParam.Load(c)
+	devs := devParam.Load(c)
 	cspec.Mounts = addSysMounts(cspec.Mounts)
 	cspec.Mounts = append(cspec.Mounts, dros...)
 	cspec.Mounts = append(cspec.Mounts, drws...)
+	cspec.Mounts = append(cspec.Mounts, devs...)
 
 	envs := envParam.Load(c)
 	cspec.Env = append(cspec.Env, envs...)
@@ -175,6 +180,7 @@ func configure(cspec nnc.ContainerSpec, c star.Context) (*nnc.ContainerSpec, err
 			return nil, err
 		}
 		cspec.Main = mainCID
+		cspec.Args = []string{"main"}
 	}
 
 	args := argsParam.Load(c)
@@ -207,6 +213,12 @@ var drwParam = star.Repeated[nnc.MountSpec]{
 	ID:       "dir-rw",
 	Parse:    parseMountSpec(true),
 	ShortDoc: "mount a directory read-write in the container",
+}
+
+var devParam = star.Repeated[nnc.MountSpec]{
+	ID:       "dev",
+	Parse:    parseDevSpec,
+	ShortDoc: "mount a host device into the container (e.g. null, urandom)",
 }
 
 var envParam = star.Repeated[string]{
@@ -255,6 +267,16 @@ func getSources() ([]nnc.Source, error) {
 	return []nnc.Source{
 		{Prefix: "./", Root: wdRoot},
 		{Prefix: "", Root: presetDir},
+	}, nil
+}
+
+func parseDevSpec(x string) (nnc.MountSpec, error) {
+	placeholder := 0 // fd number will be set by spawn()
+	return nnc.MountSpec{
+		Dst: "dev/" + x,
+		Src: nnc.MountSrc{
+			HostDev: &placeholder,
+		},
 	}, nil
 }
 
