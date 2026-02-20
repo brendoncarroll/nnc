@@ -5,6 +5,7 @@ function(ctx, spec)
     mounts: nnc.mountsMerge([spec.mounts,
       [
         nnc.mountHostRO("/etc/ssl", "/etc/ssl"),
+        nnc.mountHostRO("/etc/ca-certificates", "/etc/ca-certificates"),
       ],
     ]),
   }
