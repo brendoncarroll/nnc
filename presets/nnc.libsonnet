@@ -53,6 +53,7 @@ local dataLit(path, contents, mode=420) =
     },
   };
 
+
 local copyHostPath(path, hostPath, mode=420) =
   {
     "path": path,
@@ -61,6 +62,13 @@ local copyHostPath(path, hostPath, mode=420) =
       host_path: hostPath,
     },
   };
+
+local dataMerge(xs) =
+  local xs2 = std.map(
+    function(x) if x == null then [] else x,
+    xs
+  );
+  std.flattenArrays(xs2);
 
 local homeDir(ctx) =
   local h = ctx.envKV["HOME"];
@@ -93,6 +101,7 @@ local applyAll(ctx, spec, presets) =
 
   dataLit :: dataLit,
   copyHostPath :: copyHostPath,
+  dataMerge :: mountsMerge,
 
   homeDir :: homeDir,
   homePath :: homePath,
