@@ -155,7 +155,7 @@ func addSysMounts(m []nnc.MountSpec) []nnc.MountSpec {
 	m = append(m, nnc.MountSpec{
 		Dst: "dev",
 		Src: nnc.MountSrc{
-			TmpFS: &struct{}{},
+			TmpFS: &nnc.TmpFSSpec{},
 		},
 	})
 	return m

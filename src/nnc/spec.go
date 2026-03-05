@@ -11,12 +11,31 @@ import (
 // is copied.
 const MainPath = "/main"
 
+type TmpFSSpec struct {
+	MaxSizeBytes *int64       `json:"max_size_bytes,omitempty"`
+	Mode         *fs.FileMode `json:"mode,omitempty"`
+}
+
+func (o *TmpFSSpec) GetMaxSizeBytes() int64 {
+	if o != nil && o.MaxSizeBytes != nil {
+		return *o.MaxSizeBytes
+	}
+	return 1 << 30 // 1GB
+}
+
+func (o *TmpFSSpec) GetMode() fs.FileMode {
+	if o != nil && o.Mode != nil {
+		return *o.Mode
+	}
+	return 0o777
+}
+
 type MountSrc struct {
 	// TmpFS mounts a tmpfs at the given path
-	TmpFS    *struct{} `json:"tmpfs,omitempty"`
-	ProcFS   *struct{} `json:"procfs,omitempty"`
-	Devtmpfs *struct{} `json:"devtmpfs,omitempty"`
-	SysFS    *struct{} `json:"sysfs,omitempty"`
+	TmpFS    *TmpFSSpec `json:"tmpfs,omitempty"`
+	ProcFS   *struct{}  `json:"procfs,omitempty"`
+	Devtmpfs *struct{}  `json:"devtmpfs,omitempty"`
+	SysFS    *struct{}  `json:"sysfs,omitempty"`
 
 	// HostRO mounts a host path into the container, as read-only
 	HostRO *string `json:"host_ro,omitempty"`
