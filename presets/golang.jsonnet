@@ -11,6 +11,7 @@ function(ctx, spec)
         // TODO: use an overlay for this to prevent malicious cache corruption.
         nnc.mountHostRW("/root/.cache/go", nnc.homePath(ctx, ".cache/go")),
         nnc.mountHostRW("/root/.cache/go-build", nnc.homePath(ctx, ".cache/go-build")),
+        nnc.mountHostRW("/root/go", nnc.homePath(ctx, "go")),
       ]
     ]),
   }

@@ -177,9 +177,9 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 
 	switch {
 	case mount.Src.TmpFS != nil:
-		// If mode=777 is not set here, then device mounts don't work on a tmpfs.
-		// https://unix.stackexchange.com/questions/619814/why-do-bind-mounts-of-device-nodes-break-with-eacces-in-root-of-a-tmpfs
-		return syscall.Mount("", dst, "tmpfs", 0, "mode=777")
+		opts := mount.Src.TmpFS
+		data := fmt.Sprintf("size=%d,mode=%o", opts.GetMaxSizeBytes(), opts.GetMode())
+		return syscall.Mount("", dst, "tmpfs", 0, data)
 	case mount.Src.ProcFS != nil:
 		return syscall.Mount("", dst, "proc", 0, "")
 	case mount.Src.SysFS != nil:

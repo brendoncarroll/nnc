@@ -49,7 +49,7 @@ func TestRun(t *testing.T) {
 					{
 						Dst: "/tmp1",
 						Src: MountSrc{
-							TmpFS: &struct{}{},
+							TmpFS: &TmpFSSpec{},
 						},
 					},
 					{
