@@ -181,11 +181,13 @@ func configure(cspec nnc.ContainerSpec, c star.Context) (*nnc.ContainerSpec, err
 			return nil, err
 		}
 		cspec.Main = mainCID
-		cspec.Args = []string{"main"}
+		cspec.Args = []string{nnc.MainPath}
 	}
 
 	args := argsParam.Load(c)
-	cspec.Args = args
+	if len(args) > 0 {
+		cspec.Args = append([]string{nnc.MainPath}, args...)
+	}
 
 	// apply all presets last
 	presets := presetsParam.Load(c)
