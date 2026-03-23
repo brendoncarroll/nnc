@@ -23,6 +23,7 @@ function(ctx, spec)
         nnc.mountHostRO("/root/.config/git", nnc.homePath(ctx, ".config/git")),
 
         nnc.mountTmpfs("/root/.amp"),
+        nnc.mountHostRO("/root/.amp/bin", nnc.homePath(ctx, ".amp/bin")),
         nnc.mountHostRW("/root/.local/share/amp", nnc.homePath(ctx, ".local/share/amp")),
         nnc.mountHostRW("/root/.config/amp", nnc.homePath(ctx, ".config/amp")),
 
