@@ -78,7 +78,10 @@ local homePath(ctx, p) =
   local hd = homeDir(ctx);
   std.join("/", [hd, p]);
 
-local selectEnvKeys(ctx, keys) =
+local selectEnvKeys(ctx, keys, omitEmpty=false) =
+  if omitEmpty then
+    [k + "=" + ctx.envKV[k] for k in keys if std.objectHas(ctx.envKV, k)]
+  else
     std.map(function(k) k+"="+ctx.envKV[k], keys);
 
 local applyAll(ctx, spec, presets) =
