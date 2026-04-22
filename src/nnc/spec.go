@@ -42,8 +42,8 @@ type MountSrc struct {
 	// HostRW mounts a host path into the container, as read-write
 	HostRW *string `json:"host_rw,omitempty"`
 
+	// Deprecated: prefer HostRO/HostRW device path mounts in presets.
 	// HostDev passes a pre-opened device fd into the container.
-	// The value is the fd number as a string, set by the host process.
 	HostDev *int `json:"host_dev,omitempty"`
 }
 
