@@ -3,9 +3,9 @@ local nnc = import "./nnc.libsonnet";
 function(ctx, spec)
   spec + {
     mounts: nnc.mountsMerge([spec.mounts, [
-      nnc.mountDev("nvidia0"),
-      nnc.mountDev("nvidiactl"),
-      nnc.mountDev("nvidia-uvm"),
-      nnc.mountDev("nvidia-uvm-tools"),
+      nnc.mountSymlinkFD("/dev/nvidia0"),
+      nnc.mountSymlinkFD("/dev/nvidiactl"),
+      nnc.mountSymlinkFD("/dev/nvidia-uvm"),
+      nnc.mountSymlinkFD("/dev/nvidia-uvm-tools"),
     ]]),
   }

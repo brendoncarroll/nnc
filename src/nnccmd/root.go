@@ -289,7 +289,7 @@ func parseDevSpec(x string) (nnc.MountSpec, error) {
 	return nnc.MountSpec{
 		Dst: "dev/" + x,
 		Src: nnc.MountSrc{
-			HostDev: &placeholder,
+			SymlinkFD: &placeholder,
 		},
 	}, nil
 }

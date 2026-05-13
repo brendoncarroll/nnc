@@ -157,7 +157,7 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 			return fmt.Errorf("performing stat on %s %w", src, err)
 		}
 		isFile = !srcInfo.IsDir()
-	case mount.Src.HostDev != nil:
+	case mount.Src.SymlinkFD != nil:
 		isFile = true
 	}
 
@@ -198,8 +198,8 @@ func handleMount(oldRoot, newRoot string, mount nnc.MountSpec) error {
 		// log.Println("mounting", dst, "->", filepath.Join(oldRoot, *mount.Src.HostRW))
 		src := filepath.Join(oldRoot, *mount.Src.HostRW)
 		return syscall.Mount(src, dst, "", syscall.MS_BIND, "")
-	case mount.Src.HostDev != nil:
-		fd := *mount.Src.HostDev
+	case mount.Src.SymlinkFD != nil:
+		fd := *mount.Src.SymlinkFD
 		os.Remove(dst)
 		return os.Symlink(fmt.Sprintf("/proc/1/fd/%d", fd), dst)
 	default:

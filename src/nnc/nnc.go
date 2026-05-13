@@ -30,7 +30,7 @@ func (sys *System) spawn(spec ContainerSpec, rstng runSettings) (*os.Process, er
 	var devFiles []*os.File
 	for i := range spec.Mounts {
 		m := &spec.Mounts[i]
-		if m.Src.HostDev == nil {
+		if m.Src.SymlinkFD == nil {
 			continue
 		}
 		devPath := "/" + m.Dst
@@ -41,7 +41,7 @@ func (sys *System) spawn(spec ContainerSpec, rstng runSettings) (*os.Process, er
 		}
 		devFiles = append(devFiles, f)
 		fd := len(files)
-		m.Src.HostDev = &fd
+		m.Src.SymlinkFD = &fd
 		files = append(files, f)
 	}
 	proc, err := os.StartProcess(shimPath,

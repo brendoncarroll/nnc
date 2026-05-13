@@ -42,8 +42,8 @@ type MountSrc struct {
 	// HostRW mounts a host path into the container, as read-write
 	HostRW *string `json:"host_rw,omitempty"`
 
-	// HostDev passes a pre-opened device fd into the container.
-	HostDev *int `json:"host_dev,omitempty"`
+	// SymlinkFD passes a pre-opened fd into the container as a symlink target.
+	SymlinkFD *int `json:"symlink_fd,omitempty"`
 }
 
 func (m *MountSrc) Validate() error {
@@ -66,11 +66,11 @@ func (m *MountSrc) Validate() error {
 	if m.HostRW != nil {
 		set = append(set, "host_rw")
 	}
-	if m.HostDev != nil {
-		set = append(set, "host_dev")
+	if m.SymlinkFD != nil {
+		set = append(set, "symlink_fd")
 	}
 	if len(set) != 1 {
-		return fmt.Errorf("exactly one of tmpfs, procfs, or sysfs must be set")
+		return fmt.Errorf("exactly one mount source must be set")
 	}
 	return nil
 }

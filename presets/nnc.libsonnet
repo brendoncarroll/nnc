@@ -22,8 +22,8 @@ local mountSysfs(dst="sys") =
 local mountDevtmpfs(dst="dev") =
   mount(dst, {devtmpfs: {}});
 
-local mountDev(name) =
-  mount("dev/" + name, {host_dev: 0});
+local mountSymlinkFD(dst) =
+  mount(dst, {symlink_fd: 0});
 
 local mountsMerge(xs) =
   local xs2 = std.map(
@@ -92,7 +92,7 @@ local applyAll(ctx, spec, presets) =
   mountHostRO :: mountHostRO,
   mountHostRW :: mountHostRW,
   mountTmpfs :: mountTmpfs,
-  mountDev :: mountDev,
+  mountSymlinkFD :: mountSymlinkFD,
   mountDevtmpfs :: mountDevtmpfs,
   mountSysfs :: mountSysfs,
   mountProcfs :: mountProcfs,
