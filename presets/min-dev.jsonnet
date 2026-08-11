@@ -5,6 +5,7 @@ function(ctx, spec)
 		mounts: nnc.mountsMerge([spec.mounts, [
     	nnc.mountTmpfs("/dev"),
     	nnc.mountHostRW("/dev/null", "/dev/null"),
+    	nnc.mountHostRW("/dev/zero", "/dev/zero"),
     	nnc.mountHostRW("/dev/urandom", "/dev/urandom"),
       nnc.mountHostRW("/dev/random", "/dev/random"),
 		]]),
